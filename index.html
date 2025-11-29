@@ -7,6 +7,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
@@ -57,18 +59,785 @@
         background: #ffb000; 
       }
     </style>
+
+    <!-- React & Babel for Browser Runtime -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <script type="importmap">
 {
   "imports": {
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
     "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "react": "https://aistudiocdn.com/react@^19.2.0"
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/"
   }
 }
 </script>
 </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="./index.tsx"></script>
+
+    <script type="text/babel" data-presets="react,typescript">
+      const { useState, useEffect } = React;
+
+      // --- TYPES ---
+      type Lang = 'en' | 'zh';
+
+      interface LocalizedString {
+        en: string;
+        zh: string;
+      }
+
+      interface ParticleDef {
+        id: string;
+        name: LocalizedString;
+        description: LocalizedString;
+        category: 'common' | 'combat' | 'magic' | 'environment';
+        example?: string;
+        note?: LocalizedString;
+      }
+
+      interface PresetDef {
+        id: string;
+        name: LocalizedString;
+        description: LocalizedString;
+        command: string;
+      }
+
+      interface CommandState {
+        particle: string;
+        x: string;
+        y: string;
+        z: string;
+        dx: string;
+        dy: string;
+        dz: string;
+        speed: string;
+        count: string;
+        mode: 'force' | 'normal';
+      }
+
+      // --- CONSTANTS ---
+      const TRANSLATIONS = {
+        en: {
+          menu: {
+            overview: '01_SYS_OVERVIEW',
+            syntax: '02_CMD_SYNTAX',
+            database: '03_PARTICLE_DB',
+            generator: '04_CMD_BUILDER',
+            presets: '05_FX_PRESETS'
+          },
+          sidebar_stats: {
+            mem: 'MEM: 64KB OK',
+            disk: 'DISK: MOUNTED',
+            net: 'NET: 1200 BAUD',
+            user: 'USER: ADMIN',
+            awaiting: '> AWAITING_INPUT_'
+          },
+          headers: {
+            overview: '01 // DEFINITION',
+            syntax: '02 // COMMAND_SYNTAX',
+            database: '03 // PARTICLE_DATABASE',
+            generator: '04 // COMMAND_GENERATOR',
+            presets: '05 // EFFECT_PRESETS',
+            subtitle: 'v1.21.0 // PARTICLE_WIKI'
+          },
+          overview: {
+            init: '>> INITIALIZING VISUAL PROTOCOLS...',
+            loading: '>> LOADING PARTICLE LIBRARY...',
+            complete: 'COMPLETE.',
+            alert_title: '[!] SYSTEM ALERT',
+            alert_desc: 'Particle commands render client-side only. Excessive count (> 10000) may cause FPS drop or crash.',
+            def_title: '01 // DEFINITION',
+            def_desc: 'Particles are visual effects in Minecraft. Using the /particle command, admins can spawn them manually. They have no collision and are purely visual.'
+          },
+          syntax: {
+              arg_name_title: 'ARG: <name>',
+              arg_name_desc: 'Namespace ID of the particle. E.g., minecraft:flame.',
+              arg_pos_title: 'ARG: <pos>',
+              arg_pos_desc: 'Spawn position (x y z). Supports relative (~) or local (^) coords.',
+              arg_delta_title: 'ARG: <delta>',
+              arg_delta_desc: 'Spread area (dx dy dz). Defines volume. Set to 0 for single point.',
+              arg_speed_title: 'ARG: <speed>',
+              arg_speed_desc: 'Motion speed. For some particles (like Dust), controls color.',
+          },
+          generator: {
+              labels: {
+                  id: 'PARTICLE_ID',
+                  pos_x: 'POS_X', pos_y: 'POS_Y', pos_z: 'POS_Z',
+                  delta_x: 'DELTA_X', delta_y: 'DELTA_Y', delta_z: 'DELTA_Z',
+                  speed: 'SPEED', count: 'COUNT', mode: 'MODE'
+              },
+              preview: 'PREVIEW_OUTPUT',
+              copy: '[ COPY_COMMAND ]',
+              copied: 'COMMAND COPIED TO CLIPBOARD',
+              history: 'COMMAND_LOGS',
+              clear: '[ CLEAR_LOGS ]',
+              empty: '>> NO_LOGS_DETECTED'
+          },
+          buttons: {
+              load: '[LOAD_TO_BUILDER]',
+              restore: '[RESTORE]',
+              copy: '[ COPY ]'
+          },
+          validation: {
+              required: 'REQUIRED',
+              invalid_coord: 'INVALID COORD',
+              invalid_number: 'MUST BE NUMBER',
+              invalid_integer: 'MUST BE INTEGER',
+              min_zero: 'MUST BE >= 0'
+          }
+        },
+        zh: {
+          menu: {
+            overview: '01_系统概览',
+            syntax: '02_指令语法',
+            database: '03_粒子数据库',
+            generator: '04_指令生成器',
+            presets: '05_效果预设'
+          },
+          sidebar_stats: {
+            mem: '内存: 64KB 正常',
+            disk: '磁盘: 已挂载',
+            net: '网络: 1200 波特',
+            user: '用户: 管理员',
+            awaiting: '> 等待输入_'
+          },
+          headers: {
+            overview: '01 // 定义说明',
+            syntax: '02 // 指令语法',
+            database: '03 // 粒子数据库',
+            generator: '04 // 指令生成器',
+            presets: '05 // 效果预设',
+            subtitle: 'v1.21.0 // 粒子维基'
+          },
+          overview: {
+            init: '>> 正在初始化视觉特效协议...',
+            loading: '>> 加载粒子库...',
+            complete: '完成。',
+            alert_title: '[!] 系统警告',
+            alert_desc: '粒子命令仅在客户端渲染。过多的粒子 (Count > 10000) 可能导致客户端 FPS 下降或崩溃。请谨慎操作。',
+            def_title: '01 // 定义',
+            def_desc: '粒子 (Particles) 是 Minecraft 中的视觉效果。通过 /particle 指令，管理员可以在世界任意位置手动生成这些效果。它们没有碰撞箱，不影响物理交互，纯粹用于视觉反馈。'
+          },
+          syntax: {
+              arg_name_title: '参数: <name>',
+              arg_name_desc: '粒子的命名空间ID。例如: minecraft:flame。',
+              arg_pos_title: '参数: <pos>',
+              arg_pos_desc: '生成位置 (x y z)。可以使用相对坐标 (~) 或局部坐标 (^)。',
+              arg_delta_title: '参数: <delta>',
+              arg_delta_desc: '扩散范围 (dx dy dz)。定义生成区域的体积大小。设为 0 表示单点生成。',
+              arg_speed_title: '参数: <speed>',
+              arg_speed_desc: '粒子运动速度。对于某些粒子（如 Redstone Dust），此参数控制颜色变化。',
+          },
+          generator: {
+              labels: {
+                  id: '粒子ID',
+                  pos_x: '坐标_X', pos_y: '坐标_Y', pos_z: '坐标_Z',
+                  delta_x: '扩散_X', delta_y: '扩散_Y', delta_z: '扩散_Z',
+                  speed: '速度', count: '数量', mode: '模式'
+              },
+              preview: '预览输出',
+              copy: '[ 复制指令 ]',
+              copied: '指令已复制到剪贴板',
+              history: '指令日志',
+              clear: '[ 清空日志 ]',
+              empty: '>> 未检测到日志'
+          },
+          buttons: {
+              load: '[ 载入生成器 ]',
+              restore: '[ 恢复 ]',
+              copy: '[ 复制 ]'
+          },
+          validation: {
+              required: '必填项',
+              invalid_coord: '坐标格式错误',
+              invalid_number: '必须是数字',
+              invalid_integer: '必须是整数',
+              min_zero: '必须 >= 0'
+          }
+        }
+      };
+
+      const PARTICLES: ParticleDef[] = [
+        { 
+          id: 'flame', 
+          name: { en: 'Flame', zh: '火焰 (Flame)' }, 
+          description: { en: 'Small fire particle used on torches and furnaces.', zh: '火把和熔炉产生的微小火焰粒子。' }, 
+          category: 'common',
+          note: { en: 'Speed controls the vertical velocity.', zh: 'Speed 参数控制火焰上升的速度。' }
+        },
+        { 
+          id: 'heart', 
+          name: { en: 'Heart', zh: '爱心 (Heart)' }, 
+          description: { en: 'Used when breeding animals or taming.', zh: '繁殖动物或驯服时产生的爱心粒子。' }, 
+          category: 'common' 
+        },
+        { 
+          id: 'entity_effect', 
+          name: { en: 'Potion Swirl', zh: '药水旋涡 (Entity Effect)' }, 
+          description: { en: 'Swirls from potions. Highly color customizable.', zh: '药水产生的旋涡。支持高度自定义颜色。' }, 
+          category: 'magic',
+          note: { en: 'COLOR: Set Count=0. Then dx/dy/dz become R/G/B (0.0-1.0).', zh: '变色: 设数量(Count)=0，dx/dy/dz 即为 R/G/B 颜色值 (0.0-1.0)。' }
+        },
+        { 
+          id: 'dust', 
+          name: { en: 'Redstone Dust', zh: '红石粉 (Dust)' }, 
+          description: { en: 'Colored dust. Requires RGB and Scale arguments in ID.', zh: '彩色粉尘。需要在 ID 中指定 RGB 和大小参数。' }, 
+          category: 'common', 
+          example: 'dust 1.0 0.0 0.0 1.0',
+          note: { en: 'Syntax: dust <r> <g> <b> <size>. R/G/B are 0.0-1.0.', zh: '语法: dust <r> <g> <b> <size>。颜色值为 0.0-1.0。' }
+        },
+        { 
+          id: 'dust_color_transition', 
+          name: { en: 'Dust Transition', zh: '渐变粉尘 (Transition)' }, 
+          description: { en: 'Dust that fades from one color to another.', zh: '从一种颜色渐变到另一种颜色的粉尘。' }, 
+          category: 'common', 
+          example: 'dust_color_transition 1 0 0 1 0 0 1',
+          note: { en: 'Syntax: dust_color_transition <fromR> <fromG> <fromB> <size> <toR> <toG> <toB>.', zh: '语法: ... <起始RGB> <大小> <结束RGB>。' }
+        },
+        { 
+          id: 'note', 
+          name: { en: 'Note', zh: '音符 (Note)' }, 
+          description: { en: 'Musical note. Color changes with pitch.', zh: '音符粒子。颜色随音高变化。' }, 
+          category: 'common',
+          note: { en: 'COLOR: Set Count=0. dx controls color (pitch). Range 0.0-1.0 (approx 24 semitones).', zh: '变色: 设数量=0。dx 控制颜色(音高)。范围 0-1 (约24个半音)。' }
+        },
+        { 
+          id: 'explosion', 
+          name: { en: 'Explosion', zh: '爆炸 (Explosion)' }, 
+          description: { en: 'Large explosion cloud effect.', zh: '巨大的爆炸烟云效果。' }, 
+          category: 'combat' 
+        },
+        { 
+          id: 'crit', 
+          name: { en: 'Critical Hit', zh: '暴击 (Crit)' }, 
+          description: { en: 'Generated when dealing a critical hit.', zh: '造成暴击伤害时产生的粒子。' }, 
+          category: 'combat' 
+        },
+        { 
+          id: 'enchant', 
+          name: { en: 'Enchanting Table', zh: '附魔字符 (Enchant)' }, 
+          description: { en: 'Letters that float from books to the table.', zh: '从书架飘向附魔台的神秘字符。' }, 
+          category: 'magic',
+          note: { en: 'Motion: Particles generally move towards a central point randomly.', zh: '运动: 粒子通常会随机飘向某个中心点。' }
+        },
+        { 
+          id: 'dragon_breath', 
+          name: { en: 'Dragon Breath', zh: '龙息 (Dragon Breath)' }, 
+          description: { en: 'Purple lingering cloud.', zh: '末影龙留下的紫色滞留云雾。' }, 
+          category: 'magic' 
+        },
+        { 
+          id: 'end_rod', 
+          name: { en: 'End Rod', zh: '末地烛 (End Rod)' }, 
+          description: { en: 'White sparkle, gentle movement.', zh: '白色的光点，缓慢漂浮运动。' }, 
+          category: 'environment',
+          note: { en: 'Speed controls the random velocity intensity.', zh: 'Speed 参数控制随机运动的剧烈程度。' }
+        },
+        { 
+          id: 'portal', 
+          name: { en: 'Portal', zh: '传送门 (Portal)' }, 
+          description: { en: 'Purple particles emitted by portals and Endermen.', zh: '传送门和末影人散发的紫色粒子。' }, 
+          category: 'environment',
+          note: { en: 'Direction: Moves towards the spawn point (reverse velocity).', zh: '方向: 总是向生成点收缩移动 (反向速度)。' }
+        },
+        { 
+          id: 'campfire_cosy_smoke', 
+          name: { en: 'Campfire Smoke', zh: '营火烟雾 (Smoke)' }, 
+          description: { en: 'Rising smoke effect.', zh: '升起的烟雾效果。' }, 
+          category: 'environment',
+          note: { en: 'Motion: Moves slowly upwards. Speed affects rise rate.', zh: '运动: 缓慢上升。Speed 影响上升速率。' }
+        },
+      ];
+
+      const PRESETS: PresetDef[] = [
+        {
+          id: 'blood_rain',
+          name: { en: 'Blood Rain', zh: '血雨腥风' },
+          description: { en: 'Heavy red dust falling down over a large area.', zh: '大范围的红色粉尘下落效果，营造恐怖氛围。' },
+          command: 'particle dust 1.0 0.0 0.0 2.0 ~ ~5 ~ 5 1 5 1 100 normal'
+        },
+        {
+          id: 'magic_aura',
+          name: { en: 'Magical Aura', zh: '魔法光环' },
+          description: { en: 'Dense cloud of enchanting letters and magic particles.', zh: '密集的附魔字符和魔法粒子，适合法阵效果。' },
+          command: 'particle enchant ~ ~1 ~ 1 0.5 1 1 100 normal'
+        },
+        {
+          id: 'toxic_fog',
+          name: { en: 'Toxic Fog', zh: '剧毒迷雾' },
+          description: { en: 'Green lingering clouds that look poisonous.', zh: '绿色的滞留云雾，看起来像有毒气体。' },
+          command: 'particle dragon_breath ~ ~1 ~ 3 0.1 3 0.01 50 normal'
+        },
+        {
+          id: 'spark_storm',
+          name: { en: 'Spark Storm', zh: '电火花风暴' },
+          description: { en: 'Chaotic electric sparks flying everywhere.', zh: '混乱飞舞的电火花，模拟漏电或能量失控。' },
+          command: 'particle electric_spark ~ ~1 ~ 2 2 2 1 50 normal'
+        },
+        {
+          id: 'void_gateway',
+          name: { en: 'Void Gateway', zh: '虚空裂隙' },
+          description: { en: 'Imploding purple particles indicating a rift.', zh: '向内坍塌的紫色粒子，暗示着空间裂隙。' },
+          command: 'particle portal ~ ~1 ~ 1 2 1 1 200 normal'
+        },
+        {
+          id: 'holy_light',
+          name: { en: 'Holy Light', zh: '圣光降临' },
+          description: { en: 'Gentle white sparkles falling or floating.', zh: '柔和的白色光点，适合神圣或治愈场景。' },
+          command: 'particle end_rod ~ ~2 ~ 1 1 1 0.05 30 normal'
+        }
+      ];
+
+      // --- COMPONENTS ---
+
+      // TerminalBlock
+      const TerminalBlock = ({ command, output, label }) => {
+        return (
+          <div className="bg-black border border-retro-amber p-4 font-mono my-4 relative group">
+            {label && (
+              <div className="absolute -top-3 left-2 bg-black px-2 text-xs text-retro-amber-dim uppercase tracking-widest border border-retro-amber-dim/30">
+                {label}
+              </div>
+            )}
+            <div className="mb-2 text-retro-amber">
+              <span className="text-retro-amber-dim select-none">root@mc-server:~$ </span>
+              {command}
+            </div>
+            {output && (
+              <div className="text-retro-amber-dim text-sm pl-4 border-l-2 border-retro-amber-dim/30">
+                # {output}
+              </div>
+            )}
+            <div className="inline-block w-2.5 h-4 bg-retro-amber animate-pulse mt-1 align-middle ml-1"></div>
+          </div>
+        );
+      };
+
+      // Sidebar
+      const Sidebar = ({ activeTab, setActiveTab, lang }) => {
+        const t = TRANSLATIONS[lang];
+        
+        const menuItems = [
+          { id: 'overview', label: t.menu.overview },
+          { id: 'syntax', label: t.menu.syntax },
+          { id: 'database', label: t.menu.database },
+          { id: 'generator', label: t.menu.generator },
+          { id: 'presets', label: t.menu.presets },
+        ];
+
+        return (
+          <aside className="w-full md:w-64 border-b-2 md:border-b-0 md:border-r-2 border-retro-amber flex flex-col bg-black/30 backdrop-blur-sm z-20">
+            <div className="p-5 border-b-2 border-retro-amber text-center">
+              <h3 className="m-0 text-xl tracking-widest uppercase font-bold text-retro-amber drop-shadow-[0_0_5px_rgba(255,176,0,0.5)]">
+                // MAIN_MENU
+              </h3>
+            </div>
+            <nav className="p-5 flex-grow">
+              {menuItems.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveTab(item.id)}
+                  className={`w-full text-left block px-4 py-3 border border-transparent mb-1 uppercase text-lg transition-all duration-200 font-mono whitespace-nowrap
+                    ${activeTab === item.id 
+                      ? 'bg-retro-amber text-black shadow-[0_0_10px_rgba(255,176,0,0.5)]' 
+                      : 'text-retro-amber hover:border-retro-amber hover:bg-retro-amber/10'
+                    }`}
+                >
+                  {activeTab === item.id ? '[x] ' : '[ ] '} {item.label}
+                </button>
+              ))}
+            </nav>
+            <div className="p-5 border-t border-dashed border-retro-amber text-xs leading-relaxed text-retro-amber/80 font-mono">
+              <p>{t.sidebar_stats.mem}</p>
+              <p>{t.sidebar_stats.disk}</p>
+              <p>{t.sidebar_stats.net}</p>
+              <p>{t.sidebar_stats.user}</p>
+              <p className="mt-2 text-retro-amber-dim animate-pulse">{t.sidebar_stats.awaiting}</p>
+            </div>
+          </aside>
+        );
+      };
+
+      // App
+      const App = () => {
+        const [activeTab, setActiveTab] = useState('overview');
+        const [lang, setLang] = useState('zh'); // Default to Chinese
+        
+        const t = TRANSLATIONS[lang];
+
+        // Generator State
+        const [cmdState, setCmdState] = useState({
+          particle: 'flame',
+          x: '~', y: '~1', z: '~',
+          dx: '0', dy: '0', dz: '0',
+          speed: '0.1',
+          count: '10',
+          mode: 'normal'
+        });
+
+        const [history, setHistory] = useState([]);
+        const [errors, setErrors] = useState({});
+
+        const validateField = (name, value) => {
+          if (!value.trim()) return 'required';
+          
+          switch (name) {
+            case 'x':
+            case 'y':
+            case 'z':
+              if (!/^([~^]?(\-?\d*(\.\d+)?)?)$/.test(value)) return 'invalid_coord';
+              break;
+            case 'dx':
+            case 'dy':
+            case 'dz':
+              if (isNaN(Number(value))) return 'invalid_number';
+              break;
+            case 'speed':
+              const s = Number(value);
+              if (isNaN(s)) return 'invalid_number';
+              if (s < 0) return 'min_zero';
+              break;
+            case 'count':
+              const c = Number(value);
+              if (isNaN(c)) return 'invalid_number';
+              if (!Number.isInteger(c)) return 'invalid_integer';
+              if (c < 0) return 'min_zero';
+              break;
+          }
+          return '';
+        };
+
+        const handleInputChange = (e) => {
+          const { name, value } = e.target;
+          setCmdState(prev => ({ ...prev, [name]: value }));
+          
+          const errorKey = validateField(name, value);
+          setErrors(prev => ({
+            ...prev,
+            [name]: errorKey
+          }));
+        };
+
+        const generateCommandStr = (state) => {
+          return `/particle ${state.particle} ${state.x} ${state.y} ${state.z} ${state.dx} ${state.dy} ${state.dz} ${state.speed} ${state.count} ${state.mode}`;
+        };
+
+        const generateCommand = () => {
+          return generateCommandStr(cmdState);
+        };
+
+        const copyToClipboard = (text, isPreset = false) => {
+          if (!isPreset) {
+            const hasErrors = Object.keys(errors).some(k => errors[k]);
+            if (!hasErrors) {
+              setHistory(prev => {
+                if (prev.length > 0 && generateCommandStr(prev[0]) === text) return prev;
+                const newHistory = [cmdState, ...prev];
+                return newHistory.slice(0, 10);
+              });
+            }
+          }
+
+          navigator.clipboard.writeText(text);
+          alert(t.generator.copied);
+        };
+
+        const toggleLang = () => {
+          setLang(prev => prev === 'en' ? 'zh' : 'en');
+        };
+
+        const renderInput = (name, label, type = 'text', widthClass = '') => {
+          const errorKey = errors[name];
+          const errorMessage = errorKey ? t.validation[errorKey] : null;
+          
+          return (
+            <div className={widthClass}>
+              <label className="text-xs text-retro-amber-dim mb-1 block">{label}</label>
+              <input 
+                name={name} 
+                type={type}
+                value={cmdState[name]}
+                onChange={handleInputChange}
+                className={`w-full bg-black border p-2 text-white focus:outline-none font-mono transition-colors
+                  ${errorMessage 
+                    ? 'border-retro-red focus:border-retro-red' 
+                    : 'border-retro-amber/50 focus:border-retro-amber'
+                  }`}
+              />
+              {errorMessage && (
+                <span className="text-[10px] text-retro-red mt-1 block uppercase tracking-wider animate-pulse">
+                  [!] {errorMessage}
+                </span>
+              )}
+            </div>
+          );
+        };
+
+        return (
+          <div className="min-h-screen font-mono text-retro-amber selection:bg-retro-amber selection:text-black relative overflow-hidden">
+            <div className="fixed inset-0 pointer-events-none z-50 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_4px,3px_100%] animate-scan opacity-20"></div>
+            <div className="fixed inset-0 pointer-events-none z-0 bg-retro-bg bg-[linear-gradient(rgba(255,176,0,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,176,0,0.05)_1px,transparent_1px)] bg-[size:40px_40px]"></div>
+
+            <div className="relative z-10 max-w-7xl mx-auto my-0 md:my-10 border-0 md:border-2 border-retro-amber bg-retro-screen shadow-[0_0_50px_rgba(255,176,0,0.1)] min-h-[90vh] flex flex-col md:flex-row">
+              
+              <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} lang={lang} />
+
+              <main className="flex-grow p-6 md:p-10 overflow-y-auto h-[90vh] md:h-auto custom-scrollbar relative">
+                
+                <header className="mb-8 border-b-4 border-retro-amber pb-4 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+                  <div>
+                    <h1 className="text-3xl md:text-4xl uppercase tracking-[0.2em] font-bold drop-shadow-[0_0_8px_rgba(255,176,0,0.6)]">
+                      M.I.N.E.C.R.A.F.T. 
+                    </h1>
+                    <span className="text-base tracking-normal opacity-80">{t.headers.subtitle}</span>
+                  </div>
+
+                  <button 
+                    onClick={toggleLang}
+                    className="border border-retro-amber px-3 py-1 hover:bg-retro-amber hover:text-black transition-colors text-sm uppercase"
+                  >
+                    [{lang === 'en' ? 'SWITCH_TO_中文' : 'SWITCH_TO_EN'}]
+                  </button>
+                </header>
+
+                {activeTab === 'overview' && (
+                  <div className="space-y-6 animate-pulse-fast-once">
+                    <p className="text-lg leading-relaxed text-justify max-w-3xl">
+                      {t.overview.init}<br/>
+                      {t.overview.loading} <span className="text-green-500">{t.overview.complete}</span>
+                    </p>
+                    
+                    <div className="border border-retro-red bg-retro-red/5 p-4 text-retro-red shadow-[0_0_10px_rgba(255,51,51,0.2)]">
+                      <strong className="block text-xl mb-2">{t.overview.alert_title}</strong>
+                      {t.overview.alert_desc}
+                    </div>
+
+                    <h2 className="text-2xl mt-12 mb-4 text-black bg-retro-amber inline-block px-2 py-1 font-bold">
+                      {t.overview.def_title}
+                    </h2>
+                    <p className="max-w-3xl opacity-90">
+                      {t.overview.def_desc}
+                    </p>
+                  </div>
+                )}
+
+                {activeTab === 'syntax' && (
+                  <div className="space-y-8">
+                     <h2 className="text-2xl text-black bg-retro-amber inline-block px-2 py-1 font-bold">
+                      {t.headers.syntax}
+                    </h2>
+                    
+                    <TerminalBlock 
+                      label="SYNTAX_REF"
+                      command="/particle <name> <pos> <delta> <speed> <count> [force|normal] [viewers]" 
+                    />
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="border border-retro-amber/50 p-4">
+                        <h3 className="text-lg font-bold border-b border-retro-amber/30 pb-2 mb-2 text-white">{t.syntax.arg_name_title}</h3>
+                        <p className="text-sm opacity-80">{t.syntax.arg_name_desc}</p>
+                      </div>
+                      <div className="border border-retro-amber/50 p-4">
+                        <h3 className="text-lg font-bold border-b border-retro-amber/30 pb-2 mb-2 text-white">{t.syntax.arg_pos_title}</h3>
+                        <p className="text-sm opacity-80">{t.syntax.arg_pos_desc}</p>
+                      </div>
+                      <div className="border border-retro-amber/50 p-4">
+                        <h3 className="text-lg font-bold border-b border-retro-amber/30 pb-2 mb-2 text-white">{t.syntax.arg_delta_title}</h3>
+                        <p className="text-sm opacity-80">{t.syntax.arg_delta_desc}</p>
+                      </div>
+                      <div className="border border-retro-amber/50 p-4">
+                        <h3 className="text-lg font-bold border-b border-retro-amber/30 pb-2 mb-2 text-white">{t.syntax.arg_speed_title}</h3>
+                        <p className="text-sm opacity-80">{t.syntax.arg_speed_desc}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {activeTab === 'database' && (
+                  <div className="space-y-6">
+                    <h2 className="text-2xl text-black bg-retro-amber inline-block px-2 py-1 font-bold">
+                      {t.headers.database}
+                    </h2>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
+                      {PARTICLES.map((p) => (
+                        <div key={p.id} className="border border-retro-amber bg-black/50 p-4 hover:bg-retro-amber/10 transition-colors group relative flex flex-col">
+                          <div className="absolute top-0 right-0 p-1 text-[10px] border-b border-l border-retro-amber/50 text-retro-amber-dim uppercase">
+                            {p.category}
+                          </div>
+                          <h3 className="text-xl font-bold text-white mb-2">{p.name[lang]}</h3>
+                          <code className="text-xs bg-retro-amber/10 px-1 py-0.5 text-retro-amber-dim block mb-3 w-fit">
+                            minecraft:{p.id}
+                          </code>
+                          <p className="text-sm opacity-80 mb-4 min-h-[3rem]">{p.description[lang]}</p>
+                          
+                          {p.note && (
+                            <div className="bg-retro-amber/5 border-l-2 border-retro-amber p-2 mb-4 text-[10px] text-retro-amber-dim font-mono leading-tight">
+                              <span className="font-bold opacity-75">NOTE:</span> {p.note[lang]}
+                            </div>
+                          )}
+
+                          <div className="mt-auto">
+                              <button 
+                              onClick={() => {
+                                  let defaultId = p.id;
+                                  if(p.example) {
+                                      const parts = p.example.split(' ');
+                                      if (parts.length > 1) {
+                                          defaultId = p.example;
+                                      }
+                                  }
+                                  setCmdState(prev => ({...prev, particle: defaultId}));
+                                  setErrors(prev => ({...prev, particle: ''})); 
+                              }}
+                              className="text-xs border border-retro-amber text-retro-amber px-2 py-1 uppercase hover:bg-retro-amber hover:text-black transition-colors w-full"
+                              >
+                              {t.buttons.load}
+                              </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {activeTab === 'generator' && (
+                  <div className="space-y-6">
+                    <h2 className="text-2xl text-black bg-retro-amber inline-block px-2 py-1 font-bold">
+                      {t.headers.generator}
+                    </h2>
+                    
+                    <div className="bg-black border border-retro-amber p-6 shadow-lg">
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div className="space-y-4">
+                          <div className="flex flex-col">
+                            {renderInput('particle', t.generator.labels.id)}
+                          </div>
+                          <div className="grid grid-cols-3 gap-2">
+                            {renderInput('x', t.generator.labels.pos_x, 'text', 'text-center')}
+                            {renderInput('y', t.generator.labels.pos_y, 'text', 'text-center')}
+                            {renderInput('z', t.generator.labels.pos_z, 'text', 'text-center')}
+                          </div>
+                          <div className="grid grid-cols-3 gap-2">
+                            {renderInput('dx', t.generator.labels.delta_x, 'text', 'text-center')}
+                            {renderInput('dy', t.generator.labels.delta_y, 'text', 'text-center')}
+                            {renderInput('dz', t.generator.labels.delta_z, 'text', 'text-center')}
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                             {renderInput('speed', t.generator.labels.speed)}
+                             {renderInput('count', t.generator.labels.count, 'number')}
+                          </div>
+                          <div>
+                              <label className="text-xs text-retro-amber-dim mb-1">{t.generator.labels.mode}</label>
+                              <select name="mode" value={cmdState.mode} onChange={handleInputChange} className="w-full bg-black border border-retro-amber/50 p-2 text-white focus:border-retro-amber focus:outline-none font-mono">
+                                <option value="normal">Normal</option>
+                                <option value="force">Force (Visible &gt; 32 blocks)</option>
+                              </select>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-col justify-center">
+                          <div className="border border-dashed border-retro-amber p-4 relative h-full flex flex-col justify-center items-center bg-retro-amber/5">
+                            <div className="text-xs absolute top-2 left-2 text-retro-amber-dim">{t.generator.preview}</div>
+                            
+                            <div className="w-full break-all font-mono text-lg mb-6 text-center text-white drop-shadow-md">
+                              {generateCommand()}
+                            </div>
+
+                            <button 
+                              onClick={() => copyToClipboard(generateCommand())}
+                              className="bg-retro-amber text-black font-bold uppercase py-3 px-8 hover:bg-white transition-colors shadow-[0_0_15px_rgba(255,176,0,0.5)]"
+                            >
+                              {t.generator.copy}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="border-t border-retro-amber/30 pt-6">
+                      <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-lg font-bold text-retro-amber uppercase tracking-wider flex items-center gap-2">
+                          <span className="w-2 h-2 bg-retro-amber inline-block"></span>
+                          {t.generator.history}
+                        </h3>
+                        {history.length > 0 && (
+                            <button onClick={() => setHistory([])} className="text-xs text-retro-red hover:bg-retro-red/10 px-2 py-1 border border-transparent hover:border-retro-red/30 transition-all">
+                                {t.generator.clear}
+                            </button>
+                        )}
+                      </div>
+                      
+                      {history.length === 0 ? (
+                          <div className="text-retro-amber-dim text-sm italic p-4 border border-dashed border-retro-amber/10 bg-black/30">
+                            {t.generator.empty}
+                          </div>
+                      ) : (
+                          <div className="grid gap-2 max-h-64 overflow-y-auto custom-scrollbar pr-2">
+                            {history.map((h, i) => (
+                                <div key={i} className="flex justify-between items-center bg-black/40 border border-retro-amber/20 p-3 hover:bg-retro-amber/10 transition-colors group">
+                                    <code className="text-xs text-retro-amber/80 truncate max-w-[70%] font-mono">
+                                        {generateCommandStr(h)}
+                                    </code>
+                                    <button
+                                        onClick={() => {
+                                            setCmdState(h);
+                                            setErrors({});
+                                        }}
+                                        className="text-[10px] border border-retro-amber/30 px-3 py-1 text-retro-amber uppercase hover:bg-retro-amber hover:text-black hover:border-retro-amber transition-all"
+                                    >
+                                        {t.buttons.restore}
+                                    </button>
+                                </div>
+                            ))}
+                          </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {activeTab === 'presets' && (
+                   <div className="space-y-6">
+                     <h2 className="text-2xl text-black bg-retro-amber inline-block px-2 py-1 font-bold">
+                       {t.headers.presets}
+                     </h2>
+                     
+                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+                       {PRESETS.map((preset) => (
+                         <div key={preset.id} className="border border-retro-amber bg-black p-5 flex flex-col hover:shadow-[0_0_20px_rgba(255,176,0,0.15)] transition-all">
+                           <h3 className="text-xl font-bold text-white mb-2 pb-2 border-b border-retro-amber/30">{preset.name[lang]}</h3>
+                           <p className="text-sm text-retro-amber-dim mb-4 h-12 overflow-hidden">{preset.description[lang]}</p>
+                           
+                           <div className="bg-retro-screen border border-retro-amber/30 p-2 mb-4 font-mono text-xs text-retro-amber break-all h-20 overflow-y-auto custom-scrollbar opacity-80">
+                             {preset.command}
+                           </div>
+
+                           <button 
+                             onClick={() => copyToClipboard(preset.command, true)}
+                             className="mt-auto bg-retro-amber/10 border border-retro-amber text-retro-amber uppercase py-2 hover:bg-retro-amber hover:text-black transition-colors font-bold tracking-wider"
+                           >
+                             {t.buttons.copy}
+                           </button>
+                         </div>
+                       ))}
+                     </div>
+                   </div>
+                )}
+
+              </main>
+            </div>
+          </div>
+        );
+      };
+
+      const root = ReactDOM.createRoot(document.getElementById('root'));
+      root.render(
+        <React.StrictMode>
+          <App />
+        </React.StrictMode>
+      );
+    </script>
   </body>
 </html>
