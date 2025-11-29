@@ -57,10 +57,15 @@ export const TRANSLATIONS = {
         clear: '[ CLEAR_LOGS ]',
         empty: '>> NO_LOGS_DETECTED'
     },
+    database: {
+        search_placeholder: 'SEARCH PARTICLE ID...'
+    },
     buttons: {
         load: '[LOAD_TO_BUILDER]',
         restore: '[RESTORE]',
-        copy: '[ COPY ]'
+        copy: '[ COPY ]',
+        close: '[ CLOSE ]',
+        preview: '[ PREVIEW ]'
     },
     validation: {
         required: 'REQUIRED',
@@ -68,6 +73,9 @@ export const TRANSLATIONS = {
         invalid_number: 'MUST BE NUMBER',
         invalid_integer: 'MUST BE INTEGER',
         min_zero: 'MUST BE >= 0'
+    },
+    toast: {
+        success: 'COMMAND COPIED TO CLIPBOARD'
     }
   },
   zh: {
@@ -126,10 +134,15 @@ export const TRANSLATIONS = {
         clear: '[ 清空日志 ]',
         empty: '>> 未检测到日志'
     },
+    database: {
+        search_placeholder: '搜索粒子ID...'
+    },
     buttons: {
         load: '[ 载入生成器 ]',
         restore: '[ 恢复 ]',
-        copy: '[ 复制 ]'
+        copy: '[ 复制 ]',
+        close: '[ 关闭 ]',
+        preview: '[ 预览 ]'
     },
     validation: {
         required: '必填项',
@@ -137,6 +150,9 @@ export const TRANSLATIONS = {
         invalid_number: '必须是数字',
         invalid_integer: '必须是整数',
         min_zero: '必须 >= 0'
+    },
+    toast: {
+        success: '指令已复制到剪贴板'
     }
   }
 };

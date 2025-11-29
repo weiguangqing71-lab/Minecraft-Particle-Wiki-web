@@ -141,7 +141,7 @@
             database: '03 // PARTICLE_DATABASE',
             generator: '04 // COMMAND_GENERATOR',
             presets: '05 // EFFECT_PRESETS',
-            subtitle: 'v1.21.0 // PARTICLE_WIKI'
+            subtitle: 'v1.24.0 // PARTICLE_WIKI'
           },
           overview: {
             init: '>> INITIALIZING VISUAL PROTOCOLS...',
@@ -162,6 +162,9 @@
               arg_speed_title: 'ARG: <speed>',
               arg_speed_desc: 'Motion speed. For some particles (like Dust), controls color.',
           },
+          database: {
+              search_placeholder: 'SEARCH_DATABASE (ID/NAME)...'
+          },
           generator: {
               labels: {
                   id: 'PARTICLE_ID',
@@ -171,7 +174,7 @@
               },
               preview: 'PREVIEW_OUTPUT',
               copy: '[ COPY_COMMAND ]',
-              copied: 'COMMAND COPIED TO CLIPBOARD',
+              copied: 'COMMAND COPIED',
               history: 'COMMAND_LOGS',
               clear: '[ CLEAR_LOGS ]',
               empty: '>> NO_LOGS_DETECTED'
@@ -189,6 +192,9 @@
               invalid_number: 'MUST BE NUMBER',
               invalid_integer: 'MUST BE INTEGER',
               min_zero: 'MUST BE >= 0'
+          },
+          toast: {
+              success: '>> DATA_BUFFER_COPIED'
           }
         },
         zh: {
@@ -212,7 +218,7 @@
             database: '03 // 粒子数据库',
             generator: '04 // 指令生成器',
             presets: '05 // 效果预设',
-            subtitle: 'v1.21.0 // 粒子维基'
+            subtitle: 'v1.24.0 // 粒子维基'
           },
           overview: {
             init: '>> 正在初始化视觉特效协议...',
@@ -233,6 +239,9 @@
               arg_speed_title: '参数: <speed>',
               arg_speed_desc: '粒子运动速度。对于某些粒子（如 Redstone Dust），此参数控制颜色变化。',
           },
+          database: {
+              search_placeholder: '搜索数据库 (ID/名称)...'
+          },
           generator: {
               labels: {
                   id: '粒子ID',
@@ -242,7 +251,7 @@
               },
               preview: '预览输出',
               copy: '[ 复制指令 ]',
-              copied: '指令已复制到剪贴板',
+              copied: '指令已复制',
               history: '指令日志',
               clear: '[ 清空日志 ]',
               empty: '>> 未检测到日志'
@@ -260,6 +269,9 @@
               invalid_number: '必须是数字',
               invalid_integer: '必须是整数',
               min_zero: '必须 >= 0'
+          },
+          toast: {
+              success: '>> 数据缓冲已复制'
           }
         }
       };
@@ -357,6 +369,37 @@
           category: 'environment',
           note: { en: 'Motion: Moves slowly upwards. Speed affects rise rate.', zh: '运动: 缓慢上升。Speed 影响上升速率。' }
         },
+        { 
+          id: 'pale_oak_leaves', 
+          name: { en: 'Pale Oak Leaves', zh: '苍白橡树叶 (1.21.3)' }, 
+          description: { en: 'Pale gray leaves falling gently from trees.', zh: '从苍白橡树上缓缓飘落的灰白色叶子。' }, 
+          category: 'environment',
+          note: { en: 'Motion: Falls slowly with a swaying motion.', zh: '运动: 缓慢飘落，带有摇曳动作。' }
+        },
+        { 
+          id: 'creaking_heart_trail', 
+          name: { en: 'Creaking Trail', zh: '心之轨迹 (1.21.3)' }, 
+          description: { en: 'Orange trail connecting the Creaking to its Heart.', zh: '连接嘎吱怪(Creaking)与其心脏的橙色轨迹粒子。' }, 
+          category: 'magic' 
+        },
+        { 
+          id: 'trial_spawner_detection', 
+          name: { en: 'Trial Spawner', zh: '试炼刷怪笼 (1.21)' }, 
+          description: { en: 'Orange flame-like particles from active Trial Spawners.', zh: '活跃的试炼刷怪笼产生的橙色火焰状粒子。' }, 
+          category: 'environment' 
+        },
+        { 
+          id: 'vault_connection', 
+          name: { en: 'Vault Connection', zh: '宝库连接 (1.21)' }, 
+          description: { en: 'Particles connecting a key to a Vault block.', zh: '连接试炼钥匙和宝库方块的粒子效果。' }, 
+          category: 'environment' 
+        },
+        { 
+          id: 'ominous_spawning', 
+          name: { en: 'Ominous Spawn', zh: '不祥生成 (1.21)' }, 
+          description: { en: 'Blue-green flames indicating an Ominous Trial.', zh: '蓝绿色火焰，预示着不祥试炼的开始。' }, 
+          category: 'environment' 
+        }
       ];
 
       const PRESETS: PresetDef[] = [
@@ -371,6 +414,12 @@
           name: { en: 'Magical Aura', zh: '魔法光环' },
           description: { en: 'Dense cloud of enchanting letters and magic particles.', zh: '密集的附魔字符和魔法粒子，适合法阵效果。' },
           command: 'particle enchant ~ ~1 ~ 1 0.5 1 1 100 normal'
+        },
+        {
+          id: 'pale_garden',
+          name: { en: 'Pale Garden', zh: '苍白花园' },
+          description: { en: 'Eerie atmosphere with falling pale leaves and fog.', zh: '飘落的苍白树叶和迷雾，营造诡异的氛围。' },
+          command: 'particle pale_oak_leaves ~ ~4 ~ 5 1 5 0.05 100 normal'
         },
         {
           id: 'toxic_fog',
@@ -540,29 +589,10 @@
 
       // Parse Command String to State Object
       const parseCommandToState = (cmdString) => {
-        // Format: particle <id> <x> <y> <z> <dx> <dy> <dz> <speed> <count> <mode>
-        // Example: particle dust 1 0 0 1 ~ ~5 ~ 5 1 5 1 100 normal
-        
-        // Remove leading slash or particle command
         const clean = cmdString.replace(/^\/?particle\s+/, '');
         const parts = clean.split(' ');
         const len = parts.length;
-
-        // Since the ID can be multiple words (dust 1 0 0 1), we parse from the end
-        // [ID...] [x] [y] [z] [dx] [dy] [dz] [speed] [count] [mode]
-        // mode = len-1
-        // count = len-2
-        // speed = len-3
-        // dz = len-4
-        // dy = len-5
-        // dx = len-6
-        // z = len-7
-        // y = len-8
-        // x = len-9
-        // ID = 0 to len-9
-
-        if (len < 9) return null; // Invalid command format
-
+        if (len < 9) return null;
         return {
           mode: parts[len-1],
           count: parts[len-2],
@@ -575,6 +605,17 @@
           x: parts[len-9],
           particle: parts.slice(0, len-9).join(' ')
         };
+      };
+
+      const Toast = ({ message, show }) => {
+        return (
+          <div className={`fixed bottom-8 left-1/2 transform -translate-x-1/2 z-[9999] transition-all duration-300 ${show ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}`}>
+            <div className="bg-black border border-retro-amber px-6 py-3 shadow-[0_0_15px_rgba(255,176,0,0.3)] flex items-center gap-3">
+              <div className="w-2 h-2 bg-retro-amber animate-pulse"></div>
+              <span className="text-retro-amber font-mono text-sm uppercase tracking-wider">{message}</span>
+            </div>
+          </div>
+        );
       };
 
       // --- VISUAL PREVIEW COMPONENT ---
@@ -618,6 +659,10 @@
             // Standard Particle Mappings
             const map = {
                 'flame': ['#ff4500', '#ffa500', '#cf3000'],
+                'trial_spawner': ['#ffaa00', '#ff8800', '#cc5500'],
+                'ominous': ['#00aaaa', '#00ffaa', '#0044aa'],
+                'pale_oak': ['#eeeeee', '#dddddd', '#cccccc'],
+                'creaking': ['#ffaa00', '#aa5500'],
                 'heart': ['#ff0000', '#cc0000'],
                 'crit': ['#ffaa00', '#ffff55'],
                 'smoke': ['#555555', '#333333', '#777777'],
@@ -635,7 +680,8 @@
                 'squid_ink': ['#000000', '#1a1a1a'],
                 'snowflake': ['#ffffff', '#eeeeee'],
                 'happy_villager': ['#00ff00', '#55ff55'],
-                'lava': ['#ff4500', '#cf1020']
+                'lava': ['#ff4500', '#cf1020'],
+                'vault': ['#aaaaaa', '#ffaa00']
             };
             
             for(const key of Object.keys(map)) {
@@ -644,27 +690,64 @@
             return ['#ffffff']; // Default white
           };
 
+          const getPhysics = (id) => {
+              let gravity = 0;
+              let drag = 0.95; // Air resistance
+              let baseVy = 0;  // Initial Vertical Velocity bias
+              let collide = false;
+              
+              if (id.includes('flame') || id.includes('smoke') || id.includes('campfire') || id.includes('soul') || id.includes('bubble') || id.includes('nautilus') || id.includes('ink') || id.includes('trial_spawner') || id.includes('ominous')) {
+                  gravity = -0.03; // Rise
+                  baseVy = -0.5;
+                  drag = 0.96;
+              } else if (id.includes('lava') || id.includes('water') || id.includes('drip') || id.includes('tear') || id.includes('sculk_charge')) {
+                  gravity = 0.05; // Fall fast
+                  collide = true;
+              } else if (id.includes('cherry') || id.includes('leaves') || id.includes('pale_oak')) {
+                  gravity = 0.015; // Slow fall
+                  drag = 0.92;
+              } else if (id.includes('firework')) {
+                  gravity = 0.04;
+                  drag = 0.98;
+              } else if (id.includes('snowflake') || id.includes('ash') || id.includes('spore') || id.includes('gust')) {
+                  gravity = 0.005; // Float down
+                  drag = 0.90;
+              } else if (id.includes('cloud')) {
+                  gravity = 0;
+                  drag = 0.98;
+              }
+
+              return { gravity, drag, baseVy, collide };
+          };
+
           const render = () => {
               if (canvas.width !== canvas.clientWidth) {
                    canvas.width = canvas.clientWidth;
                    canvas.height = canvas.clientHeight;
               }
 
+              const width = canvas.width;
+              const height = canvas.height;
+              const cx = width / 2;
+              const cy = height / 2;
+
+              // Reset composite operation to ensure background clears correctly
+              ctx.globalCompositeOperation = 'source-over';
+
               // Clear
               ctx.fillStyle = '#0a0a0a';
-              ctx.fillRect(0, 0, canvas.width, canvas.height);
+              ctx.fillRect(0, 0, width, height);
               
               // Draw Grid
               ctx.strokeStyle = '#331a00'; 
               ctx.lineWidth = 1;
               ctx.beginPath();
               const gridSize = 20;
-              const cx = canvas.width / 2;
-              const cy = canvas.height / 2;
-              
-              for(let x = cx % gridSize; x < canvas.width; x += gridSize) { ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); }
-              for(let y = cy % gridSize; y < canvas.height; y += gridSize) { ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); }
+              for(let x = cx % gridSize; x < width; x += gridSize) { ctx.moveTo(x, 0); ctx.lineTo(x, height); }
+              for(let y = cy % gridSize; y < height; y += gridSize) { ctx.moveTo(0, y); ctx.lineTo(width, y); }
               ctx.stroke();
+
+              const phys = getPhysics(cmdState.particle);
 
               // Spawn Logic
               const pCount = parseInt(cmdState.count) || 1;
@@ -673,26 +756,28 @@
               const spd = parseFloat(cmdState.speed) || 0.1;
 
               // Rate limiter
-              const spawnRate = Math.min(Math.max(1, pCount / 10), 5);
+              const spawnRate = Math.min(Math.max(1, pCount / 10), 10);
               
-              if (particles.length < 200) {
+              if (particles.length < 300) {
                   for(let i=0; i<spawnRate; i++) {
                       const px = (Math.random() - 0.5) * 2 * (spreadX * 20 + 2);
                       const py = (Math.random() - 0.5) * 2 * (spreadY * 20 + 2);
 
-                      let vx = (Math.random() - 0.5) * spd * 2;
-                      let vy = (Math.random() - 0.5) * spd * 2;
+                      let vx = (Math.random() - 0.5) * spd * 3;
+                      let vy = (Math.random() - 0.5) * spd * 3;
                       
-                      const pName = cmdState.particle;
-                      if (pName.includes('flame') || pName.includes('smoke') || pName.includes('campfire') || pName.includes('lava') || pName.includes('villager')) {
-                          vy -= 0.5 + spd; 
-                      }
-                      if (pName.includes('portal') || pName.includes('enchant')) {
-                          vx = -px * 0.05;
-                          vy = -py * 0.05;
-                      }
-                      if (pName.includes('leaves') || pName.includes('snowflake')) {
-                          vy += 0.5 + spd; // fall down
+                      // Specific Movement Logic overrides
+                      if (cmdState.particle.includes('portal') || cmdState.particle.includes('enchant') || cmdState.particle.includes('reverse') || cmdState.particle.includes('vault')) {
+                          // Move towards center
+                          const angle = Math.random() * Math.PI * 2;
+                          const radius = 20 + Math.random() * 40;
+                          const startX = px || (Math.cos(angle) * radius);
+                          const startY = py || (Math.sin(angle) * radius);
+                          
+                          vx = -startX * 0.05; 
+                          vy = -startY * 0.05;
+                      } else {
+                          vy += phys.baseVy;
                       }
 
                       const colors = getColors();
@@ -701,8 +786,7 @@
                       particles.push({
                           x: px,
                           y: py,
-                          vx,
-                          vy,
+                          vx, vy,
                           life: 1.0,
                           color,
                           size: Math.random() * 2 + 1
@@ -710,12 +794,38 @@
                   }
               }
 
+              // Set Blend Mode
+              if (cmdState.particle.includes('flame') || cmdState.particle.includes('magic') || cmdState.particle.includes('portal') || cmdState.particle.includes('firework') || cmdState.particle.includes('light') || cmdState.particle.includes('spawner') || cmdState.particle.includes('ominous') || cmdState.particle.includes('creaking')) {
+                ctx.globalCompositeOperation = 'lighter';
+              } else {
+                ctx.globalCompositeOperation = 'source-over';
+              }
+
               // Update & Draw
               for (let i = particles.length - 1; i >= 0; i--) {
                   const p = particles[i];
+
+                  // Physics Update
+                  p.vx *= phys.drag;
+                  p.vy *= phys.drag;
+                  p.vy += phys.gravity;
+
                   p.x += p.vx;
                   p.y += p.vy;
-                  p.life -= 0.01 + (Math.random() * 0.02);
+                  p.life -= 0.01 + (Math.random() * 0.01);
+
+                  // Floor collision logic (simulated floor at bottom of canvas)
+                  // p.y is relative to center. ScreenY = cy + p.y.
+                  // Floor is at `height`. so if `cy + p.y > height`
+                  if (phys.collide && (cy + p.y > height - 10)) {
+                      p.y = height/2 - 10; // Reset to floor level relative to center
+                      p.vy = -p.vy * 0.5; // Bounce with dampening
+                      p.vx *= 0.8; // Friction
+                      if(Math.abs(p.vy) < 0.5) {
+                          // Splatter / Stop
+                          p.life -= 0.05;
+                      }
+                  }
 
                   if (p.life <= 0) {
                       particles.splice(i, 1);
@@ -727,7 +837,7 @@
 
                   ctx.globalAlpha = p.life;
                   ctx.fillStyle = p.color;
-                  ctx.fillRect(screenX, screenY, p.size, p.size);
+                  ctx.fillRect(Math.floor(screenX), Math.floor(screenY), p.size, p.size);
               }
               ctx.globalAlpha = 1.0;
               
@@ -768,6 +878,9 @@
           mode: 'normal'
         });
 
+        // Search State
+        const [searchQuery, setSearchQuery] = useState('');
+
         // Preset Modal State
         const [activePreset, setActivePreset] = useState(null);
 
@@ -776,6 +889,16 @@
         
         // Track color picker state
         const [particleColors, setParticleColors] = useState({});
+
+        // Toast State
+        const [toast, setToast] = useState({ show: false, msg: '' });
+
+        const showToast = (msg) => {
+            setToast({ show: true, msg });
+            setTimeout(() => {
+                setToast(prev => ({ ...prev, show: false }));
+            }, 2000);
+        };
 
         const validateField = (name, value) => {
           if (!value.trim()) return 'required';
@@ -838,7 +961,7 @@
           }
 
           navigator.clipboard.writeText(text);
-          alert(t.generator.copied);
+          showToast(t.toast.success);
         };
 
         const toggleLang = () => {
@@ -876,6 +999,8 @@
           <div className="min-h-screen font-mono text-retro-amber selection:bg-retro-amber selection:text-black relative overflow-hidden">
             <div className="fixed inset-0 pointer-events-none z-50 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_4px,3px_100%] animate-scan opacity-20"></div>
             <div className="fixed inset-0 pointer-events-none z-0 bg-retro-bg bg-[linear-gradient(rgba(255,176,0,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,176,0,0.05)_1px,transparent_1px)] bg-[size:40px_40px]"></div>
+
+            <Toast message={toast.msg} show={toast.show} />
 
             <div className="relative z-10 max-w-7xl mx-auto my-0 md:my-10 border-0 md:border-2 border-retro-amber bg-retro-screen shadow-[0_0_50px_rgba(255,176,0,0.1)] min-h-[90vh] flex flex-col md:flex-row">
               
@@ -993,9 +1118,22 @@
                     <h2 className="text-2xl text-black bg-retro-amber inline-block px-2 py-1 font-bold">
                       {t.headers.database}
                     </h2>
+
+                    <div className="mb-6">
+                      <input 
+                        type="text" 
+                        placeholder={t.database.search_placeholder}
+                        value={searchQuery}
+                        onChange={e => setSearchQuery(e.target.value)}
+                        className="w-full bg-black border border-retro-amber p-3 text-retro-amber focus:outline-none focus:shadow-[0_0_10px_rgba(255,176,0,0.3)] font-mono placeholder-retro-amber-dim/50 uppercase"
+                      />
+                    </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
-                      {PARTICLES.map((p) => {
+                      {PARTICLES.filter(p => 
+                        p.id.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                        p.name[lang].toLowerCase().includes(searchQuery.toLowerCase())
+                      ).map((p) => {
                         const pColor = particleColors[p.id] || '#ff0000';
                         return (
                           <div key={p.id} className="border border-retro-amber bg-black/50 p-4 hover:bg-retro-amber/10 transition-colors group relative flex flex-col">
