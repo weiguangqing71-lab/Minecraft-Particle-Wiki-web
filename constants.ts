@@ -160,6 +160,7 @@ export const PARTICLES: ParticleDef[] = [
     name: { en: 'Potion Swirl', zh: '药水旋涡 (Entity Effect)' }, 
     description: { en: 'Swirls from potions. Highly color customizable.', zh: '药水产生的旋涡。支持高度自定义颜色。' }, 
     category: 'magic',
+    supportsColor: true,
     note: { en: 'COLOR: Set Count=0. Then dx/dy/dz become R/G/B (0.0-1.0).', zh: '变色: 设数量(Count)=0，dx/dy/dz 即为 R/G/B 颜色值 (0.0-1.0)。' }
   },
   { 
@@ -167,6 +168,7 @@ export const PARTICLES: ParticleDef[] = [
     name: { en: 'Redstone Dust', zh: '红石粉 (Dust)' }, 
     description: { en: 'Colored dust. Requires RGB and Scale arguments in ID.', zh: '彩色粉尘。需要在 ID 中指定 RGB 和大小参数。' }, 
     category: 'common', 
+    supportsColor: true,
     example: 'dust 1.0 0.0 0.0 1.0',
     note: { en: 'Syntax: dust <r> <g> <b> <size>. R/G/B are 0.0-1.0.', zh: '语法: dust <r> <g> <b> <size>。颜色值为 0.0-1.0。' }
   },
@@ -183,6 +185,7 @@ export const PARTICLES: ParticleDef[] = [
     name: { en: 'Note', zh: '音符 (Note)' }, 
     description: { en: 'Musical note. Color changes with pitch.', zh: '音符粒子。颜色随音高变化。' }, 
     category: 'common',
+    supportsColor: true,
     note: { en: 'COLOR: Set Count=0. dx controls color (pitch). Range 0.0-1.0 (approx 24 semitones).', zh: '变色: 设数量=0。dx 控制颜色(音高)。范围 0-1 (约24个半音)。' }
   },
   { 

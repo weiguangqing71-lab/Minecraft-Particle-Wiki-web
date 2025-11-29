@@ -12,6 +12,7 @@ export interface ParticleDef {
   category: 'common' | 'combat' | 'magic' | 'environment';
   example?: string;
   note?: LocalizedString;
+  supportsColor?: boolean;
 }
 
 export interface PresetDef {
