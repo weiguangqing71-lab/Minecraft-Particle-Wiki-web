@@ -1,0 +1,5 @@
+{
+  "name": "Minecraft Particle Terminal",
+  "description": "A retro-futuristic terminal interface for generating and understanding Minecraft particle commands.",
+  "requestFramePermissions": []
+}
