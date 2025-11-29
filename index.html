@@ -179,7 +179,9 @@
           buttons: {
               load: '[LOAD_TO_BUILDER]',
               restore: '[RESTORE]',
-              copy: '[ COPY ]'
+              copy: '[ COPY ]',
+              preview: '[ PREVIEW ]',
+              close: '[ CLOSE ]'
           },
           validation: {
               required: 'REQUIRED',
@@ -248,7 +250,9 @@
           buttons: {
               load: '[ 载入生成器 ]',
               restore: '[ 恢复 ]',
-              copy: '[ 复制 ]'
+              copy: '[ 复制 ]',
+              preview: '[ 预览 ]',
+              close: '[ 关闭 ]'
           },
           validation: {
               required: '必填项',
@@ -391,6 +395,42 @@
           name: { en: 'Holy Light', zh: '圣光降临' },
           description: { en: 'Gentle white sparkles falling or floating.', zh: '柔和的白色光点，适合神圣或治愈场景。' },
           command: 'particle end_rod ~ ~2 ~ 1 1 1 0.05 30 normal'
+        },
+        {
+          id: 'sonic_boom',
+          name: { en: 'Sonic Boom', zh: '音爆冲击' },
+          description: { en: 'A powerful shockwave visual using the sonic explosion particle.', zh: '使用音爆粒子产生的强力冲击波视觉效果。' },
+          command: 'particle sonic_explosion ~ ~1 ~ 0 0 0 1 1 normal'
+        },
+        {
+          id: 'cherry_breeze',
+          name: { en: 'Cherry Breeze', zh: '樱花微风' },
+          description: { en: 'Falling cherry petals creating a peaceful atmosphere.', zh: '飘落的樱花花瓣，营造宁静的氛围。' },
+          command: 'particle cherry_leaves ~ ~3 ~ 3 1 3 0.05 50 normal'
+        },
+        {
+          id: 'shadow_cloak',
+          name: { en: 'Shadow Cloak', zh: '暗影披风' },
+          description: { en: 'Dark smoke and ink surrounding the entity.', zh: '围绕实体的黑色烟雾和墨汁，如同暗影护盾。' },
+          command: 'particle squid_ink ~ ~1 ~ 0.5 1 0.5 0.1 50 normal'
+        },
+        {
+          id: 'frost_nova',
+          name: { en: 'Frost Nova', zh: '冰霜新星' },
+          description: { en: 'An explosion of snowflakes and cold particles.', zh: '向四周爆发的雪花和寒冷粒子效果。' },
+          command: 'particle snowflake ~ ~1 ~ 1 0.1 1 0.5 100 normal'
+        },
+        {
+          id: 'emerald_beam',
+          name: { en: 'Emerald Beam', zh: '翡翠光束' },
+          description: { en: 'Green happy villager particles rising rapidly.', zh: '快速上升的绿色村民快乐粒子，如同能量光束。' },
+          command: 'particle happy_villager ~ ~ ~ 0.2 2 0.2 5 50 normal'
+        },
+        {
+          id: 'lava_jet',
+          name: { en: 'Lava Jet', zh: '岩浆喷泉' },
+          description: { en: 'Lava particles shooting upwards violently.', zh: '剧烈向上喷射的岩浆粒子。' },
+          command: 'particle lava ~ ~ ~ 0.2 0 0.2 1 50 normal'
         }
       ];
 
@@ -498,6 +538,45 @@
         return (h / 360).toFixed(2);
       };
 
+      // Parse Command String to State Object
+      const parseCommandToState = (cmdString) => {
+        // Format: particle <id> <x> <y> <z> <dx> <dy> <dz> <speed> <count> <mode>
+        // Example: particle dust 1 0 0 1 ~ ~5 ~ 5 1 5 1 100 normal
+        
+        // Remove leading slash or particle command
+        const clean = cmdString.replace(/^\/?particle\s+/, '');
+        const parts = clean.split(' ');
+        const len = parts.length;
+
+        // Since the ID can be multiple words (dust 1 0 0 1), we parse from the end
+        // [ID...] [x] [y] [z] [dx] [dy] [dz] [speed] [count] [mode]
+        // mode = len-1
+        // count = len-2
+        // speed = len-3
+        // dz = len-4
+        // dy = len-5
+        // dx = len-6
+        // z = len-7
+        // y = len-8
+        // x = len-9
+        // ID = 0 to len-9
+
+        if (len < 9) return null; // Invalid command format
+
+        return {
+          mode: parts[len-1],
+          count: parts[len-2],
+          speed: parts[len-3],
+          dz: parts[len-4],
+          dy: parts[len-5],
+          dx: parts[len-6],
+          z: parts[len-7],
+          y: parts[len-8],
+          x: parts[len-9],
+          particle: parts.slice(0, len-9).join(' ')
+        };
+      };
+
       // --- VISUAL PREVIEW COMPONENT ---
       const ParticlePreview = ({ cmdState }) => {
         const canvasRef = useRef(null);
@@ -550,6 +629,13 @@
                 'cloud': ['#ffffff', '#eeeeee'],
                 'witch': ['#800080'],
                 'soul': ['#55ffff', '#00aaaa'],
+                'electric_spark': ['#ffffaa', '#ffffff'],
+                'sonic_explosion': ['#aaddff', '#ffffff'],
+                'cherry_leaves': ['#ffb7c5', '#ffc0cb'],
+                'squid_ink': ['#000000', '#1a1a1a'],
+                'snowflake': ['#ffffff', '#eeeeee'],
+                'happy_villager': ['#00ff00', '#55ff55'],
+                'lava': ['#ff4500', '#cf1020']
             };
             
             for(const key of Object.keys(map)) {
@@ -597,12 +683,16 @@
                       let vx = (Math.random() - 0.5) * spd * 2;
                       let vy = (Math.random() - 0.5) * spd * 2;
                       
-                      if (cmdState.particle.includes('flame') || cmdState.particle.includes('smoke') || cmdState.particle.includes('campfire')) {
+                      const pName = cmdState.particle;
+                      if (pName.includes('flame') || pName.includes('smoke') || pName.includes('campfire') || pName.includes('lava') || pName.includes('villager')) {
                           vy -= 0.5 + spd; 
                       }
-                      if (cmdState.particle.includes('portal') || cmdState.particle.includes('enchant')) {
+                      if (pName.includes('portal') || pName.includes('enchant')) {
                           vx = -px * 0.05;
                           vy = -py * 0.05;
+                      }
+                      if (pName.includes('leaves') || pName.includes('snowflake')) {
+                          vy += 0.5 + spd; // fall down
                       }
 
                       const colors = getColors();
@@ -677,6 +767,9 @@
           count: '10',
           mode: 'normal'
         });
+
+        // Preset Modal State
+        const [activePreset, setActivePreset] = useState(null);
 
         const [history, setHistory] = useState([]);
         const [errors, setErrors] = useState({});
@@ -805,6 +898,42 @@
                     [{lang === 'en' ? 'SWITCH_TO_中文' : 'SWITCH_TO_EN'}]
                   </button>
                 </header>
+
+                {/* MODAL OVERLAY */}
+                {activePreset && (
+                  <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm" onClick={() => setActivePreset(null)}>
+                    <div className="bg-retro-screen border-2 border-retro-amber p-6 max-w-2xl w-full mx-4 shadow-[0_0_50px_rgba(255,176,0,0.2)] relative" onClick={e => e.stopPropagation()}>
+                       <div className="flex justify-between items-start mb-4 border-b border-retro-amber/30 pb-2">
+                          <h2 className="text-2xl font-bold uppercase">{activePreset.name[lang]}</h2>
+                          <button onClick={() => setActivePreset(null)} className="text-retro-red hover:text-white uppercase font-bold text-sm">
+                            {t.buttons.close}
+                          </button>
+                       </div>
+                       
+                       <div className="mb-4">
+                         {(() => {
+                            const parsed = parseCommandToState(activePreset.command);
+                            return parsed ? <ParticlePreview cmdState={parsed} /> : <div className="text-retro-red">ERROR PARSING COMMAND</div>;
+                         })()}
+                       </div>
+
+                       <p className="text-sm text-retro-amber-dim mb-4">{activePreset.description[lang]}</p>
+                       <code className="block bg-black border border-retro-amber/30 p-3 mb-6 font-mono text-xs break-all text-retro-amber">
+                          {activePreset.command}
+                       </code>
+
+                       <div className="flex justify-end gap-4">
+                          <button 
+                             onClick={() => copyToClipboard(activePreset.command, true)}
+                             className="bg-retro-amber text-black font-bold uppercase py-2 px-6 hover:bg-white transition-colors"
+                           >
+                             {t.buttons.copy}
+                           </button>
+                       </div>
+                    </div>
+                  </div>
+                )}
+
 
                 {activeTab === 'overview' && (
                   <div className="space-y-6 animate-pulse-fast-once">
@@ -1068,12 +1197,20 @@
                              {preset.command}
                            </div>
 
-                           <button 
-                             onClick={() => copyToClipboard(preset.command, true)}
-                             className="mt-auto bg-retro-amber/10 border border-retro-amber text-retro-amber uppercase py-2 hover:bg-retro-amber hover:text-black transition-colors font-bold tracking-wider"
-                           >
-                             {t.buttons.copy}
-                           </button>
+                           <div className="mt-auto flex gap-2">
+                              <button 
+                                onClick={() => setActivePreset(preset)}
+                                className="flex-1 bg-retro-amber/10 border border-retro-amber text-retro-amber uppercase py-2 hover:bg-retro-amber hover:text-black transition-colors font-bold tracking-wider text-xs"
+                              >
+                                {t.buttons.preview}
+                              </button>
+                              <button 
+                                onClick={() => copyToClipboard(preset.command, true)}
+                                className="flex-1 bg-retro-amber/10 border border-retro-amber text-retro-amber uppercase py-2 hover:bg-retro-amber hover:text-black transition-colors font-bold tracking-wider text-xs"
+                              >
+                                {t.buttons.copy}
+                              </button>
+                           </div>
                          </div>
                        ))}
                      </div>
